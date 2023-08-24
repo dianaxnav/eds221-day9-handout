@@ -124,7 +124,7 @@ selected_parks <- common_birds %>%
 The code below creates a faceted ggplot graph with the top 5 most frequently observed birds at each location. 
 
 ```{r}
-ggplot(data = selected_parks, y = common_name, x = total_count) +
+ggplot(data = selected_parks, aes(y = common_name, x = total_count)) +
   geom_col() +
   scale_x_continuous(limits = c(0, 3000)) +
   facet_wrap(~park_name, scales = "free_y") +

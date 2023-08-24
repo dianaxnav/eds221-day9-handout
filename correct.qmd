@@ -1,0 +1,78 @@
+---
+title: "fixed_birds"
+format: html
+editor: visual
+---
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(skimr)
+library(tidytext)
+library(here)
+```
+
+```{r}
+knb_files <- list.files(here("knb-lter-cap_256_9"), pattern = "*.csv")
+
+
+for (i in seq_along(knb_files)) {
+  assign(knb_files[i] %>% 
+           str_remove("52_pp52_") %>% 
+           str_remove(".csv"), 
+         read_csv(here("knb-lter-cap_256_9", 
+                       knb_files[i])))
+}
+```
+
+```{r}
+dim(birds_1)
+names(birds_1)
+skim(birds_1)
+tr <- unique(birds_1 %>% select(species_id))
+head(taxalist_1)
+```
+
+```{r}
+birds_df <- birds_1 %>% 
+  left_join(taxalist_1, by = "species_id")
+```
+
+```{r}
+bird_totals_by_park <- birds_df %>% 
+  left_join(sites_1) %>% 
+  group_by(park_name) %>% 
+  summarize(total_count = sum(bird_count, na.rm = TRUE)) %>% 
+  slice_max(total_count, n = 15) %>% 
+  mutate(park_name = fct_reorder(park_name, total_count))
+```
+
+```{r}
+ggplot(data = bird_totals_by_park, aes(x = total_count, y = park_name)) +
+  geom_col() +
+  labs(x = "Total bird count",
+       y = "Park name") +
+  theme_minimal()
+```
+
+```{r}
+common_birds <- birds_df %>% 
+  left_join(sites_1) %>% 
+  group_by(park_name, common_name) %>% 
+  summarize(total_count = sum(bird_count, na.rm = TRUE)) %>% 
+  slice_max(total_count, n = 5)
+```
+
+```{r}
+selected_parks <- common_birds %>% 
+  filter(park_name %in% c("Cholla Cove", "Desert Willow", "Nueve", "Orme", "Palamino", "Sonrisa"))
+```
+
+```{r}
+ggplot(data = selected_parks, aes(y = common_name, x = total_count)) +
+  geom_col() +
+  scale_x_continuous(limits = c(0, 3000)) +
+  facet_wrap(~park_name, scales = "free_y") +
+  theme_linedraw() +
+  labs(x = "\nTotal bird counts", y = "Common name")
+```
